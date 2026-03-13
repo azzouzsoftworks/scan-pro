@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScanPro — PDF Scanner, Reader & Editor</title>
+  <meta name="description" content="Scan documents to PDF, read, edit, split, merge, and generate QR codes — all in one powerful app." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #090C10;
+      --surface: #111318;
+      --card: #161B24;
+      --border: rgba(255,255,255,0.07);
+      --accent: #00C6FF;
+      --accent2: #0072FF;
+      --text: #E8EDF5;
+      --muted: #7A8499;
+      --white: #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.4;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 6vw;
+      background: rgba(9,12,16,0.75);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      background: linear-gradient(120deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    nav ul { list-style: none; display: flex; gap: 36px; }
+    nav ul a {
+      text-decoration: none; color: var(--muted);
+      font-size: 0.9rem; font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav ul a:hover { color: var(--white); }
+
+    .nav-cta {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: var(--black) !important;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: 700 !important;
+      font-size: 0.88rem !important;
+      transition: opacity 0.2s !important;
+    }
+    .nav-cta:hover { opacity: 0.85; color: var(--black) !important; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 60px;
+      padding: 130px 6vw 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Gradient blobs */
+    #hero::after {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,198,255,0.12) 0%, transparent 70%);
+      right: -100px; top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,198,255,0.1);
+      border: 1px solid rgba(0,198,255,0.25);
+      padding: 6px 14px; border-radius: 100px;
+      font-size: 0.8rem; color: var(--accent);
+      font-weight: 500; margin-bottom: 28px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: block; }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    h1 .gradient-text {
+      background: linear-gradient(120deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem; color: var(--muted);
+      max-width: 480px; margin-bottom: 40px;
+      line-height: 1.7;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: var(--black);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700; font-size: 1rem;
+      padding: 15px 30px; border-radius: 12px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(0,198,255,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,198,255,0.45); }
+
+    .btn-ghost {
+      color: var(--muted); text-decoration: none; font-size: 0.95rem;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: color 0.2s;
+    }
+    .btn-ghost:hover { color: var(--white); }
+
+    .play-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── PHONE MOCKUP ── */
+    .hero-visual {
+      display: flex; justify-content: center; align-items: center;
+      position: relative;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    .phone-wrap {
+      position: relative;
+      width: 260px;
+    }
+
+    .phone {
+      width: 260px; height: 530px;
+      background: var(--card);
+      border-radius: 40px;
+      border: 2px solid rgba(0,198,255,0.2);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04), inset 0 0 40px rgba(0,198,255,0.05);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .phone-notch {
+      width: 90px; height: 22px;
+      background: var(--black);
+      border-radius: 0 0 14px 14px;
+      margin: 0 auto 0;
+    }
+
+    .phone-screen {
+      flex: 1;
+      background: linear-gradient(160deg, #0d1520 0%, #0a1018 100%);
+      display: flex; flex-direction: column;
+      padding: 16px;
+      gap: 10px;
+    }
+
+    .phone-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .phone-header-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem; font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .phone-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+
+    .phone-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .phone-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 12px 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .phone-card-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+
+    .phone-card-label {
+      font-size: 0.6rem; color: var(--muted); font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .phone-doc-preview {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .phone-doc-icon {
+      width: 34px; height: 42px; border-radius: 5px;
+      background: linear-gradient(160deg, rgba(0,198,255,0.2), rgba(0,114,255,0.1));
+      border: 1px solid rgba(0,198,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .phone-doc-info { flex: 1; }
+    .phone-doc-name { font-size: 0.65rem; color: var(--text); font-weight: 500; }
+    .phone-doc-size { font-size: 0.55rem; color: var(--muted); }
+    .phone-doc-bar {
+      height: 3px; background: rgba(255,255,255,0.07);
+      border-radius: 2px; margin-top: 5px; overflow: hidden;
+    }
+    .phone-doc-bar-fill {
+      height: 100%; width: 65%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+    }
+
+    .phone-qr-section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .qr-mini {
+      width: 40px; height: 40px;
+      display: grid; grid-template-columns: repeat(5,1fr); grid-template-rows: repeat(5,1fr);
+      gap: 1.5px; flex-shrink: 0;
+    }
+    .qr-cell {
+      border-radius: 1px;
+      background: var(--accent);
+    }
+    .qr-cell.empty { background: transparent; }
+    .qr-mini-label { font-size: 0.6rem; color: var(--muted); line-height: 1.4; }
+    .qr-mini-label strong { color: var(--text); display: block; font-size: 0.65rem; }
+
+    .floating-badge {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .floating-badge.left { left: -80px; top: 120px; animation: float 3s ease-in-out infinite; }
+    .floating-badge.right { right: -80px; bottom: 120px; animation: float 3s 1.5s ease-in-out infinite; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* ── STATS ── */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat {
+      background: var(--black);
+      padding: 32px 40px;
+      text-align: center;
+    }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem; font-weight: 800;
+      background: linear-gradient(120deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-label { color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
+
+    /* ── FEATURES ── */
+    #features {
+      padding: 100px 6vw;
+    }
+
+    .section-label {
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 60px;
+      max-width: 500px;
+      line-height: 1.1;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--card);
+      padding: 36px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+    .feature-card:hover { background: #1a2030; }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 2rem; margin-bottom: 20px;
+      display: block;
+    }
+    .feature-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+    .feature-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+    /* ── HOW IT WORKS ── */
+    #how {
+      padding: 100px 6vw;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .steps {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 40px; margin-top: 60px;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 28px; left: 60px; right: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0.25;
+    }
+
+    .step { text-align: center; }
+    .step-num {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: var(--black);
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 20px rgba(0,198,255,0.3);
+    }
+    .step-title { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 8px; }
+    .step-desc { color: var(--muted); font-size: 0.88rem; }
+
+    /* ── CTA ── */
+    #download {
+      padding: 120px 6vw;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+
+    #download::before {
+      content: '';
+      position: absolute;
+      width: 700px; height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,198,255,0.08) 0%, transparent 65%);
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .cta-box {
+      max-width: 640px; margin: 0 auto;
+      position: relative; z-index: 1;
+    }
+
+    .cta-box h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      font-weight: 800; letter-spacing: -1px;
+      margin-bottom: 20px; line-height: 1.1;
+    }
+
+    .cta-box p { color: var(--muted); font-size: 1.05rem; margin-bottom: 40px; }
+
+    .google-play-btn {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: var(--card);
+      border: 1px solid rgba(0,198,255,0.25);
+      padding: 16px 32px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      box-shadow: 0 0 0 rgba(0,198,255,0);
+    }
+    .google-play-btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(0,198,255,0.2);
+      transform: translateY(-2px);
+    }
+
+    .gp-icon { font-size: 2rem; }
+    .gp-text-top { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .gp-text-main { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.15rem; }
+
+    /* ── PRIVACY ── */
+    #privacy {
+      padding: 100px 6vw;
+      border-top: 1px solid var(--border);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    #privacy h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem; font-weight: 800;
+      margin-bottom: 32px; letter-spacing: -0.5px;
+    }
+
+    .privacy-block { margin-bottom: 32px; }
+    .privacy-block h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1.05rem;
+      color: var(--accent); margin-bottom: 10px;
+    }
+    .privacy-block p { color: var(--muted); font-size: 0.92rem; line-height: 1.7; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 6vw;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      background: linear-gradient(120deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    footer p { color: var(--muted); font-size: 0.85rem; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--white); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      #hero { grid-template-columns: 1fr; text-align: center; padding-top: 110px; }
+      .hero-sub { margin: 0 auto 40px; }
+      .hero-actions { justify-content: center; }
+      #hero::after { display: none; }
+      .hero-visual { order: -1; }
+      .floating-badge.left, .floating-badge.right { display: none; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .steps { grid-template-columns: 1fr 1fr; }
+      .steps::before { display: none; }
+      nav ul { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">ScanPro</div>
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How it Works</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#download" class="nav-cta">Download</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-content">
+      <div class="hero-badge"><span></span> Now available on Google Play</div>
+      <h1>Scan. Edit.<br><span class="gradient-text">Do More</span><br>with PDF.</h1>
+      <p class="hero-sub">ScanPro turns your phone into a full PDF powerhouse — scan documents, edit, split, merge, read, and generate QR codes, all in one app.</p>
+      <div class="hero-actions">
+        <a href="#download" class="btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.3.17.64.24.98.21l13.63-7.74-2.93-2.93-11.68 10.46zM.1 1.3A1.5 1.5 0 000 1.9v20.2c0 .21.04.42.1.6l12.06-10.8L.1 1.3zm22.5 9.3L19.4 8.8l-3.27 2.9 3.27 2.9 3.23-1.84c.92-.52.92-1.64 0-2.16zM4.16.03L17.79 7.77l-2.93 2.93L4.16.03z"/></svg>
+          Get it on Google Play
+        </a>
+        <a href="#features" class="btn-ghost">
+          <div class="play-icon">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="white"><path d="M0 0l10 6-10 6z"/></svg>
+          </div>
+          See features
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <!-- Floating badges -->
+      <div class="floating-badge left">
+        <span style="font-size:1.2rem">📄</span>
+        <div>
+          <div style="font-size:0.7rem; color:var(--muted)">Scanned</div>
+          <div style="font-size:0.85rem">Invoice.pdf</div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-header">
+              <div class="phone-header-title">ScanPro</div>
+              <div class="phone-avatar"></div>
+            </div>
+
+            <!-- Quick actions grid -->
+            <div class="phone-grid">
+              <div class="phone-card">
+                <div class="phone-card-icon" style="background:rgba(0,198,255,0.1)">📷</div>
+                <div class="phone-card-label">Scan Doc</div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-card-icon" style="background:rgba(255,180,0,0.1)">✏️</div>
+                <div class="phone-card-label">Edit PDF</div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-card-icon" style="background:rgba(0,220,120,0.1)">✂️</div>
+                <div class="phone-card-label">Split PDF</div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-card-icon" style="background:rgba(180,100,255,0.1)">🔗</div>
+                <div class="phone-card-label">Merge PDF</div>
+              </div>
+            </div>
+
+            <!-- Recent document -->
+            <div class="phone-doc-preview">
+              <div class="phone-doc-icon">📄</div>
+              <div class="phone-doc-info">
+                <div class="phone-doc-name">Contract_2024.pdf</div>
+                <div class="phone-doc-size">2.4 MB · 12 pages</div>
+                <div class="phone-doc-bar"><div class="phone-doc-bar-fill"></div></div>
+              </div>
+            </div>
+
+            <!-- QR section -->
+            <div class="phone-qr-section">
+              <div class="qr-mini">
+                <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div>
+                <div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div>
+                <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell empty"></div>
+                <div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div>
+                <div class="qr-cell"></div><div class="qr-cell empty"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
+              </div>
+              <div class="qr-mini-label">
+                <strong>QR Generator</strong>
+                Create & scan QR codes
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating-badge right">
+        <span style="font-size:1.2rem">⭐</span>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600">4.8 Rating</div>
+          <div style="font-size:0.7rem; color:var(--muted)">Play Store</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-num">50K+</div>
+      <div class="stat-label">Downloads</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">4.8★</div>
+      <div class="stat-label">Play Store Rating</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">10+</div>
+      <div class="stat-label">Powerful Tools</div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need for documents</h2>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">📷</span>
+        <div class="feature-title">Document Scanner</div>
+        <div class="feature-desc">Capture documents with your camera and instantly convert them to crisp, clean PDFs with auto-edge detection.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📖</span>
+        <div class="feature-title">PDF Reader</div>
+        <div class="feature-desc">Open and read any PDF file smoothly with bookmarks, zoom, and a comfortable reading experience.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">✏️</span>
+        <div class="feature-title">PDF Editor</div>
+        <div class="feature-desc">Annotate, highlight, add text, sign, and make changes directly inside your PDF files.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">✂️</span>
+        <div class="feature-title">Split PDF</div>
+        <div class="feature-desc">Extract specific pages or split a large PDF into multiple smaller files with just a tap.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔗</span>
+        <div class="feature-title">Merge PDF</div>
+        <div class="feature-desc">Combine multiple PDFs into one organized document. Drag to reorder pages before merging.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⬛</span>
+        <div class="feature-title">QR Scanner & Generator</div>
+        <div class="feature-desc">Scan any QR code instantly, or generate custom QR codes for URLs, text, Wi-Fi, and more.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">Three steps to your perfect PDF</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Download the App</div>
+        <div class="step-desc">Get ScanPro free from Google Play Store in seconds.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Scan or Import</div>
+        <div class="step-desc">Use your camera to scan, or import any existing PDF file.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Edit & Manage</div>
+        <div class="step-desc">Split, merge, annotate, sign, or generate QR codes.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Save & Share</div>
+        <div class="step-desc">Export your finished document and share it anywhere.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD CTA -->
+  <section id="download">
+    <div class="cta-box">
+      <div class="section-label" style="text-align:center">Get Started Free</div>
+      <h2>Your documents,<br><span class="gradient-text">under control.</span></h2>
+      <p>Download ScanPro now and experience the easiest way to manage PDFs and QR codes on Android.</p>
+      <a href="https://play.google.com/store/apps/details?id=com.scanpro.app" class="google-play-btn">
+        <div class="gp-icon">▶</div>
+        <div>
+          <div class="gp-text-top">Get it on</div>
+          <div class="gp-text-main">Google Play</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- PRIVACY POLICY -->
+  <section id="privacy" style="max-width:100%">
+    <div style="max-width:760px; margin:0 auto">
+      <div class="section-label">Legal</div>
+      <h2>Privacy Policy</h2>
+      <p style="color:var(--muted); margin-bottom:40px; font-size:0.9rem">Last updated: January 2025</p>
+
+      <div class="privacy-block">
+        <h3>1. Introduction</h3>
+        <p>ScanPro ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use the ScanPro mobile application.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>2. Data We Collect</h3>
+        <p>ScanPro processes your documents, PDFs, and images locally on your device. We do not upload, store, or transmit your personal files or documents to any external server. We may collect anonymous usage analytics (crash reports, feature usage) to improve the app.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>3. Camera & Storage Permissions</h3>
+        <p>The app requests camera access solely for scanning documents, and storage access to read and save PDF files on your device. These permissions are never used for any other purpose.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>4. Third-Party Services</h3>
+        <p>ScanPro may use third-party SDKs such as Google Play Services for app distribution and analytics. These services have their own privacy policies. We do not sell your data to any third party.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>5. Children's Privacy</h3>
+        <p>Our app is not directed to children under 13. We do not knowingly collect personal information from children.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>6. Changes to This Policy</h3>
+        <p>We may update this policy from time to time. Continued use of the app after changes constitutes acceptance of the updated policy.</p>
+      </div>
+
+      <div class="privacy-block">
+        <h3>7. Contact Us</h3>
+        <p>If you have questions about this Privacy Policy, please contact us at: <a href="mailto:support@scanpro.app" style="color:var(--accent); text-decoration:none">support@scanpro.app</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">ScanPro</div>
+    <p style="color:var(--muted); font-size:0.82rem">© 2025 ScanPro. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+      <a href="#privacy">Privacy Policy</a>
+    </div>
+  </footer>
+
+</body>
+</html>
